@@ -1,0 +1,65 @@
+{
+  "app": {
+    "name": "Noise chat"
+  },
+  "onboarding": {
+    "welcome": "Witaj w Noise chat",
+    "step1": "Wpisz swoją wiadomość (do 10 znaków)",
+    "step2": "Machaj telefonem, aby wyświetlić wiadomość",
+    "step3": "Tekst pojawi się w powietrzu dzięki efektowi powidoku",
+    "warning_title": "Ważne informacje bezpieczeństwa",
+    "warning_flicker": "Ta aplikacja wyświetla migające światła. Nie używaj, jeśli masz padaczkę fotowrażliwą.",
+    "warning_motion": "Nie używaj podczas prowadzenia pojazdu, chodzenia lub w sytuacjach wymagających uwagi.",
+    "warning_brightness": "Wysoka jasność ekranu może powodować zmęczenie wzroku. Rób częste przerwy.",
+    "accept": "Rozumiem",
+    "skip": "Pomiń"
+  },
+  "editor": {
+    "placeholder": "Wpisz tekst...",
+    "charactersRemaining": "Pozostało {{count}} znaków",
+    "textTooLong": "Tekst jest za długi",
+    "invalidCharacters": "Zawiera niedozwolone znaki",
+    "preview": "Podgląd",
+    "start": "Rozpocznij"
+  },
+  "display": {
+    "calibrating": "Kalibracja...",
+    "countdown": "{{count}}",
+    "stop": "Stop",
+    "mirror": "Lustro",
+    "flip": "Odwróć",
+    "tooSlow": "Za wolno",
+    "perfect": "Idealnie",
+    "tooFast": "Za szybko"
+  },
+  "settings": {
+    "title": "Ustawienia",
+    "brightness": "Jasność",
+    "brightnessPrompt": "Zwiększyć jasność dla lepszej widoczności?",
+    "allow": "Zezwól",
+    "deny": "Odmów",
+    "rememberChoice": "Zapamiętaj na 24h",
+    "language": "Język",
+    "analytics": "Anonimowa analityka",
+    "analyticsDescription": "Pomóż nam się rozwijać, udostępniając anonimowe dane użytkowania",
+    "privacyPolicy": "Polityka prywatności",
+    "about": "O aplikacji"
+  },
+  "errors": {
+    "sensorPermissionDenied": "Dostęp do czujników ruchu odmówiony. Używam trybu demo.",
+    "sensorPermissionInstructions": "Aby włączyć pełne funkcje, nadaj uprawnienia do czujników ruchu w ustawieniach.",
+    "thermalWarning": "Urządzenie się przegrzewa. Przełączanie na tryb bezpieczny.",
+    "genericError": "Wystąpił błąd. Spróbuj ponownie."
+  },
+  "help": {
+    "title": "Jak używać",
+    "instruction1": "Wpisz wiadomość (maks. 10 znaków)",
+    "instruction2": "Naciśnij Start, aby rozpocząć tryb wyświetlania",
+    "instruction3": "Machaj telefonem poziomo",
+    "instruction4": "Wiadomość pojawi się w powietrzu!",
+    "tips": "Wskazówki",
+    "tip1": "Używaj w ciemnym otoczeniu dla najlepszego efektu",
+    "tip2": "Utrzymuj płynne i równomierne ruchy",
+    "tip3": "Dostosuj tempo, jeśli tekst jest trudny do odczytania"
+  }
+}
