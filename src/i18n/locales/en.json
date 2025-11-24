@@ -1,0 +1,65 @@
+{
+  "app": {
+    "name": "Noise chat"
+  },
+  "onboarding": {
+    "welcome": "Welcome to Noise chat",
+    "step1": "Enter your message (up to 10 characters)",
+    "step2": "Wave your phone to display the message",
+    "step3": "The text appears in the air using persistence of vision",
+    "warning_title": "Important Safety Information",
+    "warning_flicker": "This app displays flashing lights. Do not use if you have photosensitive epilepsy.",
+    "warning_motion": "Do not use while driving, walking, or in any situation requiring attention.",
+    "warning_brightness": "High screen brightness may cause eye strain. Take breaks frequently.",
+    "accept": "I Understand",
+    "skip": "Skip"
+  },
+  "editor": {
+    "placeholder": "Enter text...",
+    "charactersRemaining": "{{count}} characters remaining",
+    "textTooLong": "Text is too long",
+    "invalidCharacters": "Contains invalid characters",
+    "preview": "Preview",
+    "start": "Start Display"
+  },
+  "display": {
+    "calibrating": "Calibrating...",
+    "countdown": "{{count}}",
+    "stop": "Stop",
+    "mirror": "Mirror",
+    "flip": "Flip",
+    "tooSlow": "Too slow",
+    "perfect": "Perfect",
+    "tooFast": "Too fast"
+  },
+  "settings": {
+    "title": "Settings",
+    "brightness": "Brightness",
+    "brightnessPrompt": "Increase brightness for better visibility?",
+    "allow": "Allow",
+    "deny": "Deny",
+    "rememberChoice": "Remember for 24h",
+    "language": "Language",
+    "analytics": "Anonymous Analytics",
+    "analyticsDescription": "Help us improve by sharing anonymous usage data",
+    "privacyPolicy": "Privacy Policy",
+    "about": "About"
+  },
+  "errors": {
+    "sensorPermissionDenied": "Motion sensor access denied. Using demo mode.",
+    "sensorPermissionInstructions": "To enable full features, grant motion sensor permission in settings.",
+    "thermalWarning": "Device is overheating. Switching to safe mode.",
+    "genericError": "An error occurred. Please try again."
+  },
+  "help": {
+    "title": "How to Use",
+    "instruction1": "Type your message (max 10 characters)",
+    "instruction2": "Press Start to begin display mode",
+    "instruction3": "Wave your phone horizontally",
+    "instruction4": "The message will appear in the air!",
+    "tips": "Tips",
+    "tip1": "Use in dark environments for best effect",
+    "tip2": "Keep movements smooth and consistent",
+    "tip3": "Adjust tempo if text is hard to read"
+  }
+}
