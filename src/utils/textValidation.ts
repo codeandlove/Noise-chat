@@ -27,6 +27,11 @@ export const validateText = (text: string): { valid: boolean; error?: string } =
   return { valid: true };
 };
 
+/**
+ * Normalizes text for display by converting to uppercase and trimming whitespace.
+ * Text is converted to uppercase for better readability in the POV effect,
+ * as uppercase letters are more distinct when displayed rapidly.
+ */
 export const normalizeText = (text: string): string => {
   return text.toUpperCase().trim();
 };

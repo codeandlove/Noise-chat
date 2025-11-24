@@ -27,13 +27,17 @@ export class BrightnessService {
   }
 
   async restoreBrightness(): Promise<void> {
+    if (this.originalBrightness === null) {
+      return;
+    }
+
     try {
-      if (this.originalBrightness !== null) {
-        await Brightness.setBrightnessAsync(this.originalBrightness);
-        this.originalBrightness = null;
-      }
+      await Brightness.setBrightnessAsync(this.originalBrightness);
+      // Only reset after successful restoration
+      this.originalBrightness = null;
     } catch (error) {
       console.error('Error restoring brightness:', error);
+      // Keep originalBrightness to retry later
     }
   }
 

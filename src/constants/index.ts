@@ -4,6 +4,8 @@
 
 export const APP_CONFIG = {
   MAX_TEXT_LENGTH: 10,
+  // Allowed characters: A-Z (English uppercase), 0-9 (digits), space, basic punctuation (.,!?-),
+  // and Polish diacritics (ĄĆĘŁŃÓŚŹŻąćęłńóśźż)
   ALLOWED_CHARS_REGEX: /^[A-Z0-9\s.,!?\-ĄĆĘŁŃÓŚŹŻąćęłńóśźż]*$/,
   MIN_BRIGHTNESS: 0.5,
   MAX_BRIGHTNESS: 1.0,

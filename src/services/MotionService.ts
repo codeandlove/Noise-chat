@@ -2,11 +2,13 @@
  * Service for managing motion sensors and IMU data
  */
 
-import { DeviceMotion } from 'expo-sensors';
+import { DeviceMotion, DeviceMotionMeasurement } from 'expo-sensors';
 import { MotionData } from '../types';
 
+type Subscription = { remove: () => void };
+
 export class MotionService {
-  private subscription: any = null;
+  private subscription: Subscription | null = null;
   private listeners: ((data: MotionData) => void)[] = [];
 
   async requestPermission(): Promise<boolean> {
@@ -20,11 +22,16 @@ export class MotionService {
   }
 
   startMonitoring(callback: (data: MotionData) => void): void {
+    // Prevent duplicate listeners
+    if (this.listeners.includes(callback)) {
+      return;
+    }
+    
     this.listeners.push(callback);
     
     if (!this.subscription) {
       DeviceMotion.setUpdateInterval(16); // ~60fps
-      this.subscription = DeviceMotion.addListener((motionData) => {
+      this.subscription = DeviceMotion.addListener((motionData: DeviceMotionMeasurement) => {
         const data: MotionData = {
           x: motionData.acceleration?.x || 0,
           y: motionData.acceleration?.y || 0,
@@ -43,6 +50,16 @@ export class MotionService {
       this.subscription = null;
     }
     this.listeners = [];
+  }
+
+  removeListener(callback: (data: MotionData) => void): void {
+    this.listeners = this.listeners.filter((listener) => listener !== callback);
+    
+    // Stop monitoring if no listeners remain
+    if (this.listeners.length === 0 && this.subscription) {
+      this.subscription.remove();
+      this.subscription = null;
+    }
   }
 }
 
