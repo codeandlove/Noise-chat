@@ -20,7 +20,9 @@ This document explains all dependencies used in the Noise chat project and their
 
 ### Animation & Gestures
 - **react-native-gesture-handler** (~2.22.0) - Touch and gesture handling for interactive UI
-- **react-native-reanimated** (~4.0.1) - High-performance animations at 60fps for POV effect
+- **react-native-reanimated** (~3.16.3) - High-performance animations at 60fps for POV effect
+
+> **Note on Reanimated version:** Expo SDK 54 officially supports Reanimated 3.16.x in Expo Go (managed workflow). Reanimated 4.x requires a custom development build (EAS Build). Version 3.16.3 includes all features needed for MVP: useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, worklets on UI thread, and 60fps animations. Upgrade to 4.x is planned after transitioning to custom development build (post-MVP).
 
 ### Internationalization
 - **i18n-js** (^4.4.3) - Internationalization library for PL/EN support (US-013)
@@ -44,7 +46,7 @@ This document explains all dependencies used in the Noise chat project and their
 1. **Expo SDK 54**: Latest stable version with best performance and new architecture support
 2. **React 19**: Latest React with improved performance and concurrent features
 3. **React Native 0.81**: Matches Expo SDK 54 compatibility
-4. **Reanimated 4.0**: Supports new architecture and provides best animation performance
+4. **Reanimated 3.16**: Compatible with Expo Go managed workflow. Version 4.x requires custom development build.
 5. **Gesture Handler 2.22**: Latest stable with improved touch handling
 
 ### Security Considerations

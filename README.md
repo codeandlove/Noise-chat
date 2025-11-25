@@ -170,6 +170,28 @@ npm run web
 - **Android** 8.0 (API 26) or later
 - **Screen refresh rates**: 60Hz, 90Hz, 120Hz
 
+## 🔧 Troubleshooting
+
+### Error: "WorkletsError: Mismatch between JavaScript part and native part"
+
+**Cause:** Incompatible Reanimated version with Expo Go.
+
+**Solution:**
+1. Ensure `babel.config.js` exists with the Reanimated plugin
+2. Check that you have `react-native-reanimated@~3.16.3` in package.json
+3. Clear cache and reinstall:
+```bash
+rm -rf node_modules .expo
+npm install
+npx expo start -c
+```
+
+### Error: "Exception in HostFunction: NativeReanimated"
+
+**Cause:** Missing Babel configuration for Reanimated.
+
+**Solution:** Check that `babel.config.js` contains the plugin `react-native-reanimated/plugin` as the **last** item in the plugins array.
+
 ## 📄 License
 
 See LICENSE file for details.
