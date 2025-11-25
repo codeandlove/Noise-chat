@@ -15,10 +15,13 @@
     "skip": "Skip"
   },
   "editor": {
-    "placeholder": "Enter text...",
-    "charactersRemaining": "{{count}} characters remaining",
-    "textTooLong": "Text is too long",
-    "invalidCharacters": "Contains invalid characters",
+    "title": "Enter your message",
+    "placeholder": "Type here...",
+    "characterCounter": "{{count}}/{{max}} characters",
+    "fitsIndicator": {
+      "fits": "✓ Message fits",
+      "tooLong": "✗ Too long"
+    },
     "preview": "Preview",
     "start": "Start Display"
   },
@@ -46,6 +49,9 @@
     "about": "About"
   },
   "errors": {
+    "textTooLong": "Text is too long (max {{max}} characters)",
+    "invalidCharacters": "Contains unsupported characters: {{chars}}",
+    "characterSuggestion": "Try '{{replacement}}' instead of '{{original}}'",
     "sensorPermissionDenied": "Motion sensor access denied. Using demo mode.",
     "sensorPermissionInstructions": "To enable full features, grant motion sensor permission in settings.",
     "thermalWarning": "Device is overheating. Switching to safe mode.",

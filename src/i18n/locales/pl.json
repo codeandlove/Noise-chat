@@ -15,10 +15,13 @@
     "skip": "Pomiń"
   },
   "editor": {
-    "placeholder": "Wpisz tekst...",
-    "charactersRemaining": "Pozostało {{count}} znaków",
-    "textTooLong": "Tekst jest za długi",
-    "invalidCharacters": "Zawiera niedozwolone znaki",
+    "title": "Wpisz swoją wiadomość",
+    "placeholder": "Wpisz tutaj...",
+    "characterCounter": "{{count}}/{{max}} znaków",
+    "fitsIndicator": {
+      "fits": "✓ Wiadomość zmieści się",
+      "tooLong": "✗ Za długa"
+    },
     "preview": "Podgląd",
     "start": "Rozpocznij"
   },
@@ -46,6 +49,9 @@
     "about": "O aplikacji"
   },
   "errors": {
+    "textTooLong": "Tekst jest za długi (max {{max}} znaków)",
+    "invalidCharacters": "Zawiera niewspierane znaki: {{chars}}",
+    "characterSuggestion": "Spróbuj '{{replacement}}' zamiast '{{original}}'",
     "sensorPermissionDenied": "Dostęp do czujników ruchu odmówiony. Używam trybu demo.",
     "sensorPermissionInstructions": "Aby włączyć pełne funkcje, nadaj uprawnienia do czujników ruchu w ustawieniach.",
     "thermalWarning": "Urządzenie się przegrzewa. Przełączanie na tryb bezpieczny.",
