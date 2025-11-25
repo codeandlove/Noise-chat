@@ -15,7 +15,7 @@ interface ScrollPreviewProps {
   isVisible: boolean;
   /** Speed multiplier (0.5-2.0). Default: 1.0 */
   speed?: number;
-  /** Scroll direction. Default: 'ltr' (left-to-right start position) */
+  /** Scroll direction ('ltr' = left-to-right motion, 'rtl' = right-to-left motion). Default: 'ltr' */
   direction?: 'ltr' | 'rtl';
 }
 
@@ -55,18 +55,17 @@ export const ScrollPreview: React.FC<ScrollPreviewProps> = memo(({
     return () => subscription?.remove();
   }, []);
 
-  // Use the scroll animation hook
+  // Use the scroll animation hook with direction support
   const { translateX } = useScrollAnimation({
     text,
     speed,
     isActive: isVisible,
     screenWidth: dimensions.width,
+    direction,
   });
 
   // Create animated style for the text
   const animatedStyle = useAnimatedStyle(() => {
-    // For RTL direction, we could invert the animation, but for now we keep LTR
-    // The animation starts from right and moves to left (simulating phone wave motion)
     return {
       transform: [{ translateX: translateX.value }],
     };
@@ -83,7 +82,6 @@ export const ScrollPreview: React.FC<ScrollPreviewProps> = memo(({
           style={[
             styles.scrollingText,
             animatedStyle,
-            direction === 'rtl' && styles.rtlText,
           ]}
           numberOfLines={1}
         >
@@ -120,8 +118,5 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontFamily: MONOSPACE_FONT,
     position: 'absolute',
-  },
-  rtlText: {
-    // For RTL support if needed in the future
   },
 });

@@ -14,8 +14,10 @@ import type { SharedValue } from 'react-native-reanimated';
 
 /**
  * Constants for animation calculations
+ * Character width is an estimate for monospace font at 28px.
+ * This provides a reasonable approximation across platforms.
  */
-const CHAR_WIDTH_ESTIMATE = 20; // px for monospace font at ~28px
+const DEFAULT_CHAR_WIDTH = 20; // px for monospace font at ~28px
 const BASE_SCROLL_SPEED = 200; // px/s
 
 interface UseScrollAnimationParams {
@@ -27,6 +29,10 @@ interface UseScrollAnimationParams {
   isActive: boolean;
   /** Screen width for calculating distance */
   screenWidth: number;
+  /** Scroll direction ('ltr' starts from right, 'rtl' starts from left). Default: 'ltr' */
+  direction?: 'ltr' | 'rtl';
+  /** Character width estimate in pixels. Default: 20 */
+  charWidth?: number;
 }
 
 interface UseScrollAnimationReturn {
@@ -49,11 +55,13 @@ export const useScrollAnimation = ({
   speed = 1.0,
   isActive,
   screenWidth,
+  direction = 'ltr',
+  charWidth = DEFAULT_CHAR_WIDTH,
 }: UseScrollAnimationParams): UseScrollAnimationReturn => {
   // Calculate text width based on character count
   const textWidth = useMemo(() => {
-    return text.length * CHAR_WIDTH_ESTIMATE;
-  }, [text]);
+    return text.length * charWidth;
+  }, [text, charWidth]);
 
   // Calculate total distance to scroll (screen width + text width)
   const distance = useMemo(() => {
@@ -66,17 +74,28 @@ export const useScrollAnimation = ({
     return baseDuration / speed;
   }, [distance, speed]);
 
+  // Calculate start and end positions based on direction
+  const { startPosition, endPosition } = useMemo(() => {
+    if (direction === 'ltr') {
+      // Text starts from right side of screen and scrolls left
+      return { startPosition: screenWidth, endPosition: -textWidth };
+    } else {
+      // Text starts from left side of screen and scrolls right
+      return { startPosition: -textWidth, endPosition: screenWidth };
+    }
+  }, [direction, screenWidth, textWidth]);
+
   // Shared value for translateX animation
-  const translateX = useSharedValue(screenWidth);
+  const translateX = useSharedValue(startPosition);
 
   // Start/stop animation based on isActive and text changes
   useEffect(() => {
     if (isActive && text.length > 0) {
-      // Reset position to start from right edge
-      translateX.value = screenWidth;
+      // Reset position to start position
+      translateX.value = startPosition;
       // Start infinite scroll animation
       translateX.value = withRepeat(
-        withTiming(-textWidth, {
+        withTiming(endPosition, {
           duration: animationDuration,
           easing: Easing.linear,
         }),
@@ -86,14 +105,14 @@ export const useScrollAnimation = ({
     } else {
       // Cancel animation when not active
       cancelAnimation(translateX);
-      translateX.value = screenWidth;
+      translateX.value = startPosition;
     }
 
     // Cleanup on unmount
     return () => {
       cancelAnimation(translateX);
     };
-  }, [isActive, text, speed, screenWidth, textWidth, animationDuration, translateX]);
+  }, [isActive, text, speed, startPosition, endPosition, animationDuration, translateX]);
 
   return {
     translateX,
