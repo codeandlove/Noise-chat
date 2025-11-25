@@ -16,7 +16,7 @@ const i18n = new I18n({
 // Get the primary locale (first part before dash, e.g., 'en' from 'en-US')
 // Handle case when Localization.locale is undefined (web, some simulators, older devices)
 const deviceLocale = Localization.locale?.split('-')[0] 
-  || Localization.getLocales()[0]?.languageCode 
+  || Localization.getLocales()?.[0]?.languageCode 
   || 'en';
 i18n.locale = deviceLocale === 'pl' ? 'pl' : 'en';
 i18n.enableFallback = true;
