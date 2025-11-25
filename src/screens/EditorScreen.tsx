@@ -2,9 +2,9 @@
  * Editor screen - text input and preview
  */
 
-import React, { memo } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { TextEditor, Button } from '../components';
+import React, { memo, useState } from 'react';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import { TextEditor, Button, ScrollPreview } from '../components';
 import { useTextValidation } from '../hooks';
 import { t } from '../i18n';
 import { APP_CONFIG } from '../constants';
@@ -16,7 +16,8 @@ const COLORS = {
 };
 
 export const EditorScreen: React.FC = memo(() => {
-  const { text, setText, validation, graphemeCount } = useTextValidation('');
+  const { text, setText, validation, normalizedText, graphemeCount } = useTextValidation('');
+  const [previewVisible, setPreviewVisible] = useState(true);
 
   const canStart = validation.isValid && text.length > 0;
 
@@ -43,6 +44,29 @@ export const EditorScreen: React.FC = memo(() => {
             maxLength={APP_CONFIG.MAX_TEXT_LENGTH}
             graphemeCount={graphemeCount}
           />
+
+          {/* ScrollPreview - show only when there is text */}
+          {normalizedText.length > 0 && (
+            <View style={styles.previewSection}>
+              <View style={styles.previewHeader}>
+                <Text style={styles.previewTitle}>{t('editor.scrollPreview.title')}</Text>
+                <TouchableOpacity onPress={() => setPreviewVisible(!previewVisible)}>
+                  <Text style={styles.toggleButton}>
+                    {previewVisible ? t('editor.scrollPreview.hide') : t('editor.scrollPreview.show')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              
+              {previewVisible && (
+                <ScrollPreview
+                  text={normalizedText}
+                  isVisible={previewVisible}
+                  speed={1.0}
+                  direction="ltr"
+                />
+              )}
+            </View>
+          )}
         </View>
 
         {/* Start Button */}
@@ -82,6 +106,24 @@ const styles = StyleSheet.create({
   },
   editorContainer: {
     flex: 1,
+  },
+  previewSection: {
+    marginTop: 24,
+  },
+  previewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  previewTitle: {
+    fontSize: 16,
+    color: COLORS.accent,
+    fontWeight: '600',
+  },
+  toggleButton: {
+    fontSize: 14,
+    color: COLORS.accent,
   },
   buttonContainer: {
     paddingTop: 24,
