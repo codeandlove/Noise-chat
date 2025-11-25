@@ -2,29 +2,39 @@
  * Custom hook for text validation
  */
 
-import { useState, useCallback } from 'react';
-import { validateText, normalizeText, getRemainingCharacters } from '../utils/textValidation';
+import { useState, useCallback, useMemo } from 'react';
+import { validateText, normalizeText, countGraphemes } from '../utils/textValidation';
+import type { TextValidationResult } from '../types';
 
-export const useTextValidation = (initialText = '') => {
-  const [text, setText] = useState(initialText);
-  const [error, setError] = useState<string | undefined>();
+interface UseTextValidationReturn {
+  text: string;
+  setText: (text: string) => void;
+  validation: TextValidationResult;
+  normalizedText: string;
+  graphemeCount: number;
+}
 
-  const handleTextChange = useCallback((newText: string) => {
-    const validation = validateText(newText);
-    setText(newText);
-    setError(validation.error);
+/**
+ * Hook for managing text input with validation
+ * @param initialText - Optional initial text value
+ * @returns Text state, setter, validation result, and normalized text
+ */
+export const useTextValidation = (initialText = ''): UseTextValidationReturn => {
+  const [text, setTextState] = useState(initialText);
+
+  const validation = useMemo(() => validateText(text), [text]);
+  const normalizedText = useMemo(() => normalizeText(text), [text]);
+  const graphemeCount = useMemo(() => countGraphemes(text), [text]);
+
+  const setText = useCallback((newText: string) => {
+    setTextState(newText);
   }, []);
-
-  const normalizedText = normalizeText(text);
-  const remaining = getRemainingCharacters(text);
-  const isValid = !error && text.length > 0;
 
   return {
     text,
+    setText,
+    validation,
     normalizedText,
-    error,
-    remaining,
-    isValid,
-    handleTextChange,
+    graphemeCount,
   };
 };

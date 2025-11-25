@@ -2,8 +2,23 @@
  * Application constants
  */
 
+/**
+ * Set of allowed uppercase characters: A-Z, 0-9, space, punctuation, and Polish diacritics
+ */
+export const ALLOWED_CHARS = new Set([
+  // English uppercase letters
+  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+  'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+  // Digits
+  '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+  // Space and punctuation
+  ' ', '.', ',', '!', '?', '-',
+  // Polish diacritics (uppercase)
+  'Ą', 'Ć', 'Ę', 'Ł', 'Ń', 'Ó', 'Ś', 'Ź', 'Ż',
+]);
+
 export const APP_CONFIG = {
-  MAX_TEXT_LENGTH: 10,
+  MAX_TEXT_LENGTH: 10, // in graphemes
   // Allowed characters: A-Z (English uppercase), 0-9 (digits), space, basic punctuation (.,!?-),
   // and Polish diacritics (ĄĆĘŁŃÓŚŹŻąćęłńóśźż)
   ALLOWED_CHARS_REGEX: /^[A-Z0-9\s.,!?\-ĄĆĘŁŃÓŚŹŻąćęłńóśźż]*$/,
@@ -27,10 +42,10 @@ export const DISPLAY_CONFIG = {
 export const SUPPORTED_LOCALES = ['pl', 'en'] as const;
 
 export const DEFAULT_SETTINGS = {
+  locale: 'pl' as const,
+  hasCompletedOnboarding: false,
+  analyticsOptIn: false,
   brightness: 1.0,
   keepAwake: false,
   displayMode: 'imu' as const,
-  locale: 'en' as const,
-  onboardingCompleted: false,
-  analyticsOptIn: false,
 };
