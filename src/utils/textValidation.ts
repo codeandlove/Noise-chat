@@ -54,8 +54,9 @@ const CHARACTER_SUGGESTIONS: Record<string, string> = {
  */
 export const countGraphemes = (text: string): number => {
   // Use Intl.Segmenter if available for proper grapheme counting
+  // Grapheme segmentation is locale-agnostic, but we use 'und' (undefined) for clarity
   if (typeof Intl !== 'undefined' && Intl.Segmenter) {
-    const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
+    const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
     return [...segmenter.segment(text)].length;
   }
   // Fallback: spread operator handles most cases including emoji
@@ -108,11 +109,11 @@ export const validateText = (text: string): TextValidationResult => {
     errors.push('textTooLong');
   }
 
-  // Check for invalid characters
+  // Check for invalid characters using for...of for better performance
   const invalidChars: string[] = [];
   const suggestions: Map<string, string> = new Map();
 
-  for (const char of [...text]) {
+  for (const char of text) {
     if (!isCharacterSupported(char)) {
       invalidChars.push(char);
       const suggestion = getSupportedCharacterSuggestions(char);

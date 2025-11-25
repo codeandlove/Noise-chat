@@ -30,9 +30,29 @@ const COLORS = {
 };
 
 /**
+ * Platform-specific monospace font family
+ */
+const MONOSPACE_FONT = Platform.select({
+  ios: 'Menlo',
+  android: 'monospace',
+  default: 'monospace',
+});
+
+interface ParsedError {
+  type: string;
+  params: string;
+}
+
+interface ParsedWarning {
+  type: string;
+  original: string;
+  replacement: string;
+}
+
+/**
  * Parse error string to extract type and parameters
  */
-const parseError = (error: string): { type: string; params: string } => {
+const parseError = (error: string): ParsedError => {
   const [type, ...rest] = error.split(':');
   return { type, params: rest.join(':') };
 };
@@ -40,9 +60,34 @@ const parseError = (error: string): { type: string; params: string } => {
 /**
  * Parse warning string to extract type and parameters
  */
-const parseWarning = (warning: string): { type: string; original: string; replacement: string } => {
+const parseWarning = (warning: string): ParsedWarning => {
   const [type, original, replacement] = warning.split(':');
   return { type, original, replacement };
+};
+
+/**
+ * Format error messages with i18n
+ */
+const formatErrorMessage = (error: string, maxLength: number): string => {
+  const { type, params } = parseError(error);
+  if (type === 'textTooLong') {
+    return t('errors.textTooLong', { max: maxLength });
+  }
+  if (type === 'invalidCharacters') {
+    return t('errors.invalidCharacters', { chars: params });
+  }
+  return error;
+};
+
+/**
+ * Format warning messages with i18n
+ */
+const formatWarningMessage = (warning: string): string => {
+  const { type, original, replacement } = parseWarning(warning);
+  if (type === 'characterSuggestion') {
+    return t('errors.characterSuggestion', { original, replacement });
+  }
+  return warning;
 };
 
 export const TextEditor: React.FC<TextEditorProps> = memo(({
@@ -57,26 +102,8 @@ export const TextEditor: React.FC<TextEditorProps> = memo(({
   const hasErrors = errors.length > 0;
   const fits = graphemeCount <= maxLength;
 
-  // Format error messages with i18n
-  const errorMessages = errors.map((error) => {
-    const { type, params } = parseError(error);
-    if (type === 'textTooLong') {
-      return t('errors.textTooLong', { max: maxLength });
-    }
-    if (type === 'invalidCharacters') {
-      return t('errors.invalidCharacters', { chars: params });
-    }
-    return error;
-  });
-
-  // Format warning messages with i18n
-  const warningMessages = warnings.map((warning) => {
-    const { type, original, replacement } = parseWarning(warning);
-    if (type === 'characterSuggestion') {
-      return t('errors.characterSuggestion', { original, replacement });
-    }
-    return warning;
-  });
+  const errorMessages = errors.map((error) => formatErrorMessage(error, maxLength));
+  const warningMessages = warnings.map(formatWarningMessage);
 
   return (
     <View style={styles.container}>
@@ -156,7 +183,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 2,
     borderColor: COLORS.border,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontFamily: MONOSPACE_FONT,
     minHeight: 60,
   },
   inputError: {
@@ -180,7 +207,7 @@ const styles = StyleSheet.create({
   previewText: {
     fontSize: 28,
     color: COLORS.accent,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontFamily: MONOSPACE_FONT,
     fontWeight: 'bold',
   },
   statusRow: {
