@@ -4,3 +4,4 @@
 
 export { TextEditor } from './TextEditor';
 export { Button } from './Button';
+export { ScrollPreview } from './ScrollPreview';

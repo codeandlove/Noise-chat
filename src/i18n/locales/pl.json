@@ -23,7 +23,13 @@
       "tooLong": "✗ Za długa"
     },
     "preview": "Podgląd",
-    "start": "Rozpocznij"
+    "start": "Rozpocznij",
+    "scrollPreview": {
+      "title": "Podgląd",
+      "show": "Pokaż podgląd",
+      "hide": "Ukryj podgląd",
+      "hint": "Tak będzie wyglądać Twoja wiadomość podczas machania"
+    }
   },
   "display": {
     "calibrating": "Kalibracja...",

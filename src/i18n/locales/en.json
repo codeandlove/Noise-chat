@@ -23,7 +23,13 @@
       "tooLong": "✗ Too long"
     },
     "preview": "Preview",
-    "start": "Start Display"
+    "start": "Start Display",
+    "scrollPreview": {
+      "title": "Preview",
+      "show": "Show preview",
+      "hide": "Hide preview",
+      "hint": "This is how your message will look when waving"
+    }
   },
   "display": {
     "calibrating": "Calibrating...",

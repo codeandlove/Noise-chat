@@ -4,3 +4,4 @@
 
 export { useSettings } from './useSettings';
 export { useTextValidation } from './useTextValidation';
+export { useScrollAnimation } from './useScrollAnimation';
