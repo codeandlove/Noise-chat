@@ -39,7 +39,8 @@
     "flip": "Odwróć",
     "tooSlow": "Za wolno",
     "perfect": "Idealnie",
-    "tooFast": "Za szybko"
+    "tooFast": "Za szybko",
+    "fallbackMode": "Czujniki ruchu niedostępne. Używam automatycznego przewijania."
   },
   "settings": {
     "title": "Ustawienia",

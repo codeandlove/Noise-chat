@@ -1,13 +1,16 @@
 /**
  * Display screen - POV effect with scrolling text
  * Implements US-003: Start display mode functionality
+ * Implements US-004: IMU synchronization for motion-synced scrolling
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform } from 'react-native';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
-import { Countdown } from '../components';
+import { Countdown, TempoIndicator, FallbackNotice } from '../components';
 import BrightnessService from '../services/BrightnessService';
+import { useIMUMotion } from '../hooks';
 import { t } from '../i18n';
 import { APP_CONFIG, DISPLAY_CONFIG } from '../constants';
 
@@ -16,6 +19,15 @@ const COLORS = {
   text: '#FFFFFF',
   accent: '#00FF00',
 };
+
+/**
+ * Platform-specific monospace font family
+ */
+const MONOSPACE_FONT = Platform.select({
+  ios: 'Menlo',
+  android: 'monospace',
+  default: 'monospace',
+});
 
 type DisplayPhase = 'countdown' | 'displaying';
 
@@ -31,6 +43,44 @@ export const DisplayScreen: React.FC<DisplayScreenProps> = ({
   onStop,
 }) => {
   const [phase, setPhase] = useState<DisplayPhase>('countdown');
+  const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
+  const [showFallbackNotice, setShowFallbackNotice] = useState(false);
+
+  // Track screen dimensions for responsive layout
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+      setScreenWidth(window.width);
+    });
+    return () => subscription?.remove();
+  }, []);
+
+  // Handle fallback activation
+  const handleFallbackActivated = useCallback(() => {
+    setShowFallbackNotice(true);
+    // Hide notice after 3 seconds
+    setTimeout(() => setShowFallbackNotice(false), 3000);
+  }, []);
+
+  // IMU Motion hook for synchronized scrolling
+  const {
+    translateX,
+    displayMode,
+    isCalibrated,
+    tempoIndicator,
+    permissionDenied,
+  } = useIMUMotion({
+    text,
+    screenWidth,
+    isActive: phase === 'displaying',
+    onFallbackActivated: handleFallbackActivated,
+  });
+
+  // Animated style for the scrolling text
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateX: translateX.value }],
+    };
+  });
 
   // Keep the screen awake during display mode
   useEffect(() => {
@@ -77,14 +127,32 @@ export const DisplayScreen: React.FC<DisplayScreenProps> = ({
     );
   }
 
-  // Display phase - show the text with a Stop button
+  // Display phase - show the text with IMU-synced scrolling
   return (
     <View style={styles.container}>
-      {/* Main display area with text */}
+      {/* Tempo indicator - only show in IMU mode when calibrated */}
+      <TempoIndicator
+        tempo={tempoIndicator}
+        visible={displayMode === 'imu' && isCalibrated}
+      />
+
+      {/* Fallback mode notice */}
+      <FallbackNotice
+        permissionDenied={permissionDenied}
+        visible={showFallbackNotice}
+      />
+
+      {/* Main display area with animated scrolling text */}
       <View style={styles.textContainer}>
-        <Text style={styles.displayText} numberOfLines={1} adjustsFontSizeToFit>
+        <Animated.Text
+          style={[
+            styles.displayText,
+            animatedStyle,
+          ]}
+          numberOfLines={1}
+        >
           {text}
-        </Text>
+        </Animated.Text>
       </View>
 
       {/* Stop button */}
@@ -112,17 +180,17 @@ const styles = StyleSheet.create({
   textContainer: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     width: '100%',
-    paddingHorizontal: DISPLAY_CONFIG.HORIZONTAL_MARGIN_PERCENT,
+    overflow: 'hidden',
   },
   displayText: {
     fontSize: DISPLAY_CONFIG.TEXT_FONT_SIZE,
     fontWeight: 'bold',
     color: COLORS.text,
-    textAlign: 'center',
-    fontFamily: 'monospace',
+    fontFamily: MONOSPACE_FONT,
     letterSpacing: DISPLAY_CONFIG.TEXT_LETTER_SPACING,
+    position: 'absolute',
   },
   stopButtonContainer: {
     position: 'absolute',
