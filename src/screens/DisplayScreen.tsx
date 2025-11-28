@@ -2,13 +2,14 @@
  * Display screen - POV effect with scrolling text
  * Implements US-003: Start display mode functionality
  * Implements US-004: IMU synchronization for motion-synced scrolling
+ * Implements US-005: Tempo calibration with haptic feedback
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
-import { Countdown, TempoIndicator, FallbackNotice } from '../components';
+import { Countdown, TempoIndicator, FallbackNotice, CalibrationIndicator } from '../components';
 import BrightnessService from '../services/BrightnessService';
 import { useIMUMotion } from '../hooks';
 import { t } from '../i18n';
@@ -66,8 +67,11 @@ export const DisplayScreen: React.FC<DisplayScreenProps> = ({
     translateX,
     displayMode,
     isCalibrated,
+    isCalibrating,
+    calibrationProgress,
     tempoIndicator,
     permissionDenied,
+    recalibrate,
   } = useIMUMotion({
     text,
     screenWidth,
@@ -130,10 +134,18 @@ export const DisplayScreen: React.FC<DisplayScreenProps> = ({
   // Display phase - show the text with IMU-synced scrolling
   return (
     <View style={styles.container}>
+      {/* Calibration progress indicator */}
+      <CalibrationIndicator
+        isCalibrating={isCalibrating}
+        progress={calibrationProgress}
+        isCalibrated={isCalibrated}
+        visible={displayMode === 'imu'}
+      />
+
       {/* Tempo indicator - only show in IMU mode when calibrated */}
       <TempoIndicator
         tempo={tempoIndicator}
-        visible={displayMode === 'imu' && isCalibrated}
+        visible={displayMode === 'imu' && isCalibrated && !isCalibrating}
       />
 
       {/* Fallback mode notice */}
@@ -155,8 +167,19 @@ export const DisplayScreen: React.FC<DisplayScreenProps> = ({
         </Animated.Text>
       </View>
 
-      {/* Stop button */}
+      {/* Stop button and recalibrate button */}
       <View style={styles.stopButtonContainer}>
+        {displayMode === 'imu' && isCalibrated && (
+          <TouchableOpacity
+            style={styles.recalibrateButton}
+            onPress={recalibrate}
+            accessibilityRole="button"
+            accessibilityLabel={t('display.recalibrate')}
+            accessibilityHint="Resets calibration and starts a new tempo calibration"
+          >
+            <Text style={styles.recalibrateButtonText}>{t('display.recalibrate')}</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           style={styles.stopButton}
           onPress={handleStop}
@@ -198,6 +221,21 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  recalibrateButton: {
+    backgroundColor: '#555555',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  recalibrateButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text,
   },
   stopButton: {
     backgroundColor: '#FF3B30',

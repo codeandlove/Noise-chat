@@ -1,6 +1,7 @@
 /**
  * Custom hook for IMU-synchronized motion control
  * Implements US-004: Motion sensor synchronization for POV effect
+ * Implements US-005: Tempo calibration with haptic feedback
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
@@ -13,6 +14,7 @@ import {
 } from 'react-native-reanimated';
 import type { SharedValue } from 'react-native-reanimated';
 import MotionService, { IMUState } from '../services/MotionService';
+import CalibrationService, { CalibrationState } from '../services/CalibrationService';
 import { DisplayMode, TempoIndicator, MotionData } from '../types';
 
 interface UseIMUMotionParams {
@@ -33,6 +35,10 @@ interface UseIMUMotionReturn {
   displayMode: DisplayMode;
   /** Whether calibration is complete */
   isCalibrated: boolean;
+  /** Whether calibration is in progress */
+  isCalibrating: boolean;
+  /** Calibration progress (0-1) */
+  calibrationProgress: number;
   /** Tempo indicator for UI feedback */
   tempoIndicator: TempoIndicator;
   /** Current scroll direction */
@@ -43,6 +49,10 @@ interface UseIMUMotionReturn {
   recalibrate: () => void;
   /** Whether permission was denied */
   permissionDenied: boolean;
+  /** Whether haptic metronome is enabled */
+  metronomeEnabled: boolean;
+  /** Toggle haptic metronome */
+  setMetronomeEnabled: (enabled: boolean) => void;
 }
 
 /**
@@ -66,15 +76,44 @@ export const useIMUMotion = ({
 }: UseIMUMotionParams): UseIMUMotionReturn => {
   const [displayMode, setDisplayMode] = useState<DisplayMode>('imu');
   const [isCalibrated, setIsCalibrated] = useState(false);
+  const [isCalibrating, setIsCalibrating] = useState(false);
+  const [calibrationProgress, setCalibrationProgress] = useState(0);
   const [tempoIndicator, setTempoIndicator] = useState<TempoIndicator>('too-slow');
   const [direction, setDirection] = useState<'left' | 'right' | 'stationary'>('stationary');
   const [isIMUAvailable, setIsIMUAvailable] = useState(true);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  const [metronomeEnabled, setMetronomeEnabledState] = useState(true);
   
   // Animation values
   const translateX = useSharedValue(screenWidth);
   const textWidth = text.length * CHAR_WIDTH;
   const autoScrollActive = useRef(false);
+  const lastTempoRef = useRef<TempoIndicator>('too-slow');
+  const lastHapticTimeRef = useRef<number>(0);
+  
+  // Haptic throttle interval in ms
+  const HAPTIC_THROTTLE_INTERVAL = 500;
+  
+  // Handle calibration state updates
+  const handleCalibrationStateUpdate = useCallback((state: CalibrationState) => {
+    setIsCalibrating(state.isCalibrating);
+    setIsCalibrated(state.isCalibrated);
+    setCalibrationProgress(state.progress);
+    setTempoIndicator(state.tempoIndicator);
+    setMetronomeEnabledState(state.metronomeEnabled);
+    
+    // Play haptic feedback on tempo change (throttled)
+    const now = Date.now();
+    if (
+      state.tempoIndicator !== lastTempoRef.current && 
+      state.isCalibrated &&
+      now - lastHapticTimeRef.current > HAPTIC_THROTTLE_INTERVAL
+    ) {
+      CalibrationService.playTempoHaptic(state.tempoIndicator);
+      lastTempoRef.current = state.tempoIndicator;
+      lastHapticTimeRef.current = now;
+    }
+  }, []);
   
   // Initialize IMU on mount
   useEffect(() => {
@@ -99,23 +138,33 @@ export const useIMUMotion = ({
         return;
       }
       
-      // IMU is ready
+      // IMU is ready - start calibration
       setIsIMUAvailable(true);
       setDisplayMode('imu');
+      CalibrationService.addListener(handleCalibrationStateUpdate);
+      CalibrationService.startCalibration();
     };
     
     initIMU();
     
     return () => {
       MotionService.stopMonitoring();
+      CalibrationService.removeListener(handleCalibrationStateUpdate);
+      CalibrationService.reset();
     };
-  }, [isActive, onFallbackActivated]);
+  }, [isActive, onFallbackActivated, handleCalibrationStateUpdate]);
   
   // Handle IMU state updates
   const handleStateUpdate = useCallback((state: IMUState) => {
-    setIsCalibrated(state.isCalibrated);
-    setTempoIndicator(state.tempoIndicator);
     setDirection(state.direction);
+    
+    // Forward velocity samples to CalibrationService during calibration
+    if (CalibrationService.getState().isCalibrating) {
+      CalibrationService.addVelocitySample(state.velocity, state.direction);
+    } else if (CalibrationService.getState().isCalibrated) {
+      // Update tempo indicator after calibration
+      CalibrationService.updateTempoIndicator(state.velocity);
+    }
   }, []);
   
   // Handle motion data for IMU mode
@@ -197,17 +246,27 @@ export const useIMUMotion = ({
   // Recalibrate function
   const recalibrate = useCallback(() => {
     MotionService.recalibrate();
+    CalibrationService.recalibrate();
     translateX.value = screenWidth;
   }, [translateX, screenWidth]);
+  
+  // Toggle metronome
+  const setMetronomeEnabled = useCallback((enabled: boolean) => {
+    CalibrationService.setMetronomeEnabled(enabled);
+  }, []);
   
   return {
     translateX,
     displayMode,
     isCalibrated,
+    isCalibrating,
+    calibrationProgress,
     tempoIndicator,
     direction,
     isIMUAvailable,
     recalibrate,
     permissionDenied,
+    metronomeEnabled,
+    setMetronomeEnabled,
   };
 };
