@@ -45,7 +45,12 @@ interface UseIMUMotionReturn {
   permissionDenied: boolean;
 }
 
-// Constants for scroll calculations
+/**
+ * Constants for scroll calculations
+ * Character width is an estimate for monospace font at ~28px display size.
+ * This provides a reasonable approximation across platforms.
+ * Matches the constant in useScrollAnimation for consistency.
+ */
 const CHAR_WIDTH = 20; // px per character (monospace font estimate)
 const BASE_SCROLL_MULTIPLIER = 15; // Convert velocity to scroll pixels
 
@@ -156,24 +161,21 @@ export const useIMUMotion = ({
     } else if (displayMode === 'auto-scroll' && !autoScrollActive.current) {
       // Start auto-scroll fallback animation
       autoScrollActive.current = true;
-      translateX.value = screenWidth;
       
       // Calculate animation duration for smooth scroll
       const distance = screenWidth + textWidth;
       const duration = (distance / 200) * 1000; // 200 px/s
       
-      const startAutoScroll = () => {
-        translateX.value = screenWidth;
-        translateX.value = withTiming(-textWidth, {
-          duration,
-          easing: Easing.linear,
-        });
-      };
+      // Start initial animation from right side
+      translateX.value = screenWidth;
+      translateX.value = withTiming(-textWidth, {
+        duration,
+        easing: Easing.linear,
+      });
       
-      startAutoScroll();
-      
-      // Repeat animation
+      // Repeat animation at interval
       const interval = setInterval(() => {
+        // Reset and start new animation in one call using sequence
         translateX.value = screenWidth;
         translateX.value = withTiming(-textWidth, {
           duration,

@@ -107,14 +107,19 @@ export class MotionService {
         const deltaTime = this.lastTimestamp > 0 ? (timestamp - this.lastTimestamp) / 1000 : 0;
         this.lastTimestamp = timestamp;
         
-        // Use rotation rate for better motion detection (phone waving is rotation-based)
-        const rotationX = motionData.rotationRate?.gamma || 0; // rotation around vertical axis
+        // Use rotation rate for motion detection (phone waving is rotation-based)
+        // gamma: rotation around Y-axis (side-to-side tilt), useful for horizontal waving
+        const rotationGamma = motionData.rotationRate?.gamma || 0;
         const accelerationX = motionData.acceleration?.x || 0;
         
-        // Calculate velocity from acceleration (integrate over time)
+        // Calculate motion intensity for velocity estimate
         if (deltaTime > 0 && deltaTime < 0.1) { // Sanity check on deltaTime
-          // Combine rotation rate and acceleration for velocity estimate
-          const velocityEstimate = Math.abs(rotationX) + Math.abs(accelerationX);
+          // Scale rotation rate (rad/s) and acceleration (m/s²) to comparable magnitudes
+          // Rotation rate typically ~1-5 rad/s for waving, acceleration ~1-10 m/s²
+          const scaledRotation = Math.abs(rotationGamma) * 2.0;
+          const scaledAcceleration = Math.abs(accelerationX);
+          // Combine with weighted average for motion intensity estimate
+          const velocityEstimate = (scaledRotation * 0.6) + (scaledAcceleration * 0.4);
           
           // Add to history
           this.velocityHistory.push(velocityEstimate);
@@ -126,8 +131,8 @@ export class MotionService {
           this.currentVelocity = this.velocityHistory.reduce((a, b) => a + b, 0) / this.velocityHistory.length;
           
           // Determine direction based on rotation
-          if (Math.abs(rotationX) > CALIBRATION_THRESHOLD) {
-            this.currentDirection = rotationX > 0 ? 'right' : 'left';
+          if (Math.abs(rotationGamma) > CALIBRATION_THRESHOLD) {
+            this.currentDirection = rotationGamma > 0 ? 'right' : 'left';
           } else {
             this.currentDirection = 'stationary';
           }
