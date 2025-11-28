@@ -9,7 +9,7 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { Countdown } from '../components';
 import BrightnessService from '../services/BrightnessService';
 import { t } from '../i18n';
-import { APP_CONFIG } from '../constants';
+import { APP_CONFIG, DISPLAY_CONFIG } from '../constants';
 
 const COLORS = {
   background: '#000000',
@@ -114,15 +114,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
-    paddingHorizontal: '8%', // DISPLAY_CONFIG.HORIZONTAL_MARGIN
+    paddingHorizontal: DISPLAY_CONFIG.HORIZONTAL_MARGIN_PERCENT,
   },
   displayText: {
-    fontSize: 120,
+    fontSize: DISPLAY_CONFIG.TEXT_FONT_SIZE,
     fontWeight: 'bold',
     color: COLORS.text,
     textAlign: 'center',
     fontFamily: 'monospace',
-    letterSpacing: 8,
+    letterSpacing: DISPLAY_CONFIG.TEXT_LETTER_SPACING,
   },
   stopButtonContainer: {
     position: 'absolute',

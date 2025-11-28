@@ -21,7 +21,6 @@ const COLORS = {
 interface CountdownProps {
   duration: number; // countdown duration in seconds (1-3)
   onComplete: () => void;
-  onCancel?: () => void;
 }
 
 export const Countdown: React.FC<CountdownProps> = memo(({
