@@ -108,7 +108,7 @@ export const CalibrationIndicator: React.FC<CalibrationIndicatorProps> = memo(({
               <View 
                 style={[
                   styles.progressFill,
-                  { width: `${progressWidthPercent}%` as const },
+                  { width: `${progressWidthPercent}%` },
                 ]} 
               />
             </View>

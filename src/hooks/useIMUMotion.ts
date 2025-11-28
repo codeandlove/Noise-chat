@@ -89,6 +89,10 @@ export const useIMUMotion = ({
   const textWidth = text.length * CHAR_WIDTH;
   const autoScrollActive = useRef(false);
   const lastTempoRef = useRef<TempoIndicator>('too-slow');
+  const lastHapticTimeRef = useRef<number>(0);
+  
+  // Haptic throttle interval in ms
+  const HAPTIC_THROTTLE_INTERVAL = 500;
   
   // Handle calibration state updates
   const handleCalibrationStateUpdate = useCallback((state: CalibrationState) => {
@@ -98,10 +102,16 @@ export const useIMUMotion = ({
     setTempoIndicator(state.tempoIndicator);
     setMetronomeEnabledState(state.metronomeEnabled);
     
-    // Play haptic feedback on tempo change
-    if (state.tempoIndicator !== lastTempoRef.current && state.isCalibrated) {
+    // Play haptic feedback on tempo change (throttled)
+    const now = Date.now();
+    if (
+      state.tempoIndicator !== lastTempoRef.current && 
+      state.isCalibrated &&
+      now - lastHapticTimeRef.current > HAPTIC_THROTTLE_INTERVAL
+    ) {
       CalibrationService.playTempoHaptic(state.tempoIndicator);
       lastTempoRef.current = state.tempoIndicator;
+      lastHapticTimeRef.current = now;
     }
   }, []);
   

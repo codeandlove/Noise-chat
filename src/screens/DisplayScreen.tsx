@@ -175,6 +175,7 @@ export const DisplayScreen: React.FC<DisplayScreenProps> = ({
             onPress={recalibrate}
             accessibilityRole="button"
             accessibilityLabel={t('display.recalibrate')}
+            accessibilityHint="Resets calibration and starts a new tempo calibration"
           >
             <Text style={styles.recalibrateButtonText}>{t('display.recalibrate')}</Text>
           </TouchableOpacity>

@@ -28,7 +28,7 @@ export class CalibrationService {
     metronomeEnabled: true,
   };
 
-  private listeners: CalibrationStateListener[] = [];
+  private listeners: Set<CalibrationStateListener> = new Set();
   private metronomeInterval: ReturnType<typeof setInterval> | null = null;
   private calibrationTimeout: ReturnType<typeof setTimeout> | null = null;
   private velocitySamples: number[] = [];
@@ -219,16 +219,14 @@ export class CalibrationService {
    * Subscribe to state changes
    */
   addListener(callback: CalibrationStateListener): void {
-    if (!this.listeners.includes(callback)) {
-      this.listeners.push(callback);
-    }
+    this.listeners.add(callback);
   }
 
   /**
    * Unsubscribe from state changes
    */
   removeListener(callback: CalibrationStateListener): void {
-    this.listeners = this.listeners.filter((l) => l !== callback);
+    this.listeners.delete(callback);
   }
 
   /**
