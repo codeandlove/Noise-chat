@@ -39,7 +39,8 @@
     "flip": "Flip",
     "tooSlow": "Too slow",
     "perfect": "Perfect",
-    "tooFast": "Too fast"
+    "tooFast": "Too fast",
+    "fallbackMode": "Motion sensors unavailable. Using automatic scroll."
   },
   "settings": {
     "title": "Settings",
