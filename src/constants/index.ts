@@ -33,10 +33,13 @@ export const APP_CONFIG = {
 
 export const DISPLAY_CONFIG = {
   HORIZONTAL_MARGIN: 0.08, // 8% margin
+  HORIZONTAL_MARGIN_PERCENT: '8%', // For style use
   IMMERSIVE_MODE: true,
   DEFAULT_TEMPO: 1.0,
   MIN_TEMPO: 0.5,
   MAX_TEMPO: 2.0,
+  TEXT_FONT_SIZE: 120,
+  TEXT_LETTER_SPACING: 8,
 } as const;
 
 export const SUPPORTED_LOCALES = ['pl', 'en'] as const;
