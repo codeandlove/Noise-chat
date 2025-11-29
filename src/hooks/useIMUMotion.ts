@@ -16,6 +16,7 @@ import type { SharedValue } from 'react-native-reanimated';
 import MotionService, { IMUState } from '../services/MotionService';
 import CalibrationService, { CalibrationState } from '../services/CalibrationService';
 import { DisplayMode, TempoIndicator, MotionData } from '../types';
+import { DISPLAY_CONFIG } from '../constants';
 
 interface UseIMUMotionParams {
   /** Text to display */
@@ -56,13 +57,9 @@ interface UseIMUMotionReturn {
 }
 
 /**
- * Constants for scroll calculations
- * Character width is an estimate for monospace font at ~28px display size.
- * This provides a reasonable approximation across platforms.
- * Matches the constant in useScrollAnimation for consistency.
+ * Multiplier to convert velocity to scroll pixels
  */
-const CHAR_WIDTH = 20; // px per character (monospace font estimate)
-const BASE_SCROLL_MULTIPLIER = 15; // Convert velocity to scroll pixels
+const BASE_SCROLL_MULTIPLIER = 15;
 
 /**
  * Hook for managing IMU-synchronized scrolling animation
@@ -86,7 +83,7 @@ export const useIMUMotion = ({
   
   // Animation values
   const translateX = useSharedValue(screenWidth);
-  const textWidth = text.length * CHAR_WIDTH;
+  const textWidth = text.length * DISPLAY_CONFIG.CHAR_WIDTH;
   const autoScrollActive = useRef(false);
   const lastTempoRef = useRef<TempoIndicator>('too-slow');
   const lastHapticTimeRef = useRef<number>(0);

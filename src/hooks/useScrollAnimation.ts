@@ -11,14 +11,7 @@ import {
   Easing,
 } from 'react-native-reanimated';
 import type { SharedValue } from 'react-native-reanimated';
-
-/**
- * Constants for animation calculations
- * Character width is an estimate for monospace font at 28px.
- * This provides a reasonable approximation across platforms.
- */
-const DEFAULT_CHAR_WIDTH = 20; // px for monospace font at ~28px
-const BASE_SCROLL_SPEED = 200; // px/s
+import { DISPLAY_CONFIG } from '../constants';
 
 interface UseScrollAnimationParams {
   /** Text to animate */
@@ -31,7 +24,7 @@ interface UseScrollAnimationParams {
   screenWidth: number;
   /** Scroll direction ('ltr' starts from right, 'rtl' starts from left). Default: 'ltr' */
   direction?: 'ltr' | 'rtl';
-  /** Character width estimate in pixels. Default: 20 */
+  /** Character width estimate in pixels. Default: from DISPLAY_CONFIG */
   charWidth?: number;
 }
 
@@ -56,7 +49,7 @@ export const useScrollAnimation = ({
   isActive,
   screenWidth,
   direction = 'ltr',
-  charWidth = DEFAULT_CHAR_WIDTH,
+  charWidth = DISPLAY_CONFIG.CHAR_WIDTH,
 }: UseScrollAnimationParams): UseScrollAnimationReturn => {
   // Calculate text width based on character count
   const textWidth = useMemo(() => {
@@ -70,7 +63,7 @@ export const useScrollAnimation = ({
 
   // Calculate animation duration based on speed
   const animationDuration = useMemo(() => {
-    const baseDuration = (distance / BASE_SCROLL_SPEED) * 1000; // ms
+    const baseDuration = (distance / DISPLAY_CONFIG.BASE_SCROLL_SPEED) * 1000; // ms
     return baseDuration / speed;
   }, [distance, speed]);
 

@@ -40,6 +40,8 @@ export const DISPLAY_CONFIG = {
   MAX_TEMPO: 2.0,
   TEXT_FONT_SIZE: 120,
   TEXT_LETTER_SPACING: 8,
+  CHAR_WIDTH: 20, // px per character (monospace font estimate)
+  BASE_SCROLL_SPEED: 200, // px/s for scroll animation
 } as const;
 
 export const SUPPORTED_LOCALES = ['pl', 'en'] as const;
