@@ -3,7 +3,7 @@
  * Implements US-006: Safety — flicker protection
  */
 
-import { APP_CONFIG } from '../constants';
+import { APP_CONFIG, DISPLAY_CONFIG } from '../constants';
 
 /**
  * Minimum safe animation frequency in Hz
@@ -86,14 +86,10 @@ export const calculateSafeSpeedMultiplier = (
   textLength: number,
   screenWidth: number
 ): number => {
-  // Estimate character width (matches constants in hooks)
-  const CHAR_WIDTH = 20;
-  const textWidth = textLength * CHAR_WIDTH;
+  const textWidth = textLength * DISPLAY_CONFIG.CHAR_WIDTH;
   const totalDistance = screenWidth + textWidth;
   
-  // Base scroll speed in px/s
-  const BASE_SCROLL_SPEED = 200;
-  const targetSpeed = BASE_SCROLL_SPEED * baseSpeed;
+  const targetSpeed = DISPLAY_CONFIG.BASE_SCROLL_SPEED * baseSpeed;
   
   // Calculate animation duration and frequency
   const durationMs = (totalDistance / targetSpeed) * 1000;
@@ -109,7 +105,7 @@ export const calculateSafeSpeedMultiplier = (
   const safeDurationMs = 1000 / safeFrequency;
   const safeSpeed = (totalDistance / safeDurationMs) * 1000;
   
-  return safeSpeed / BASE_SCROLL_SPEED;
+  return safeSpeed / DISPLAY_CONFIG.BASE_SCROLL_SPEED;
 };
 
 /**

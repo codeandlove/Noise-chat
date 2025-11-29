@@ -136,9 +136,10 @@ export class BrightnessService {
   /**
    * Cleanup method to ensure brightness is restored and listeners are removed
    * Call this when the service is no longer needed
+   * @returns Promise that resolves when cleanup is complete
    */
-  cleanup(): void {
-    this.restoreBrightness();
+  async cleanup(): Promise<void> {
+    await this.restoreBrightness();
     this.removeAppStateListener();
   }
 }
