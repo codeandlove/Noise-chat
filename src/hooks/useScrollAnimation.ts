@@ -85,7 +85,7 @@ export const useScrollAnimation = ({
   const { startPosition, endPosition } = useMemo(() => {
     // Use safe defaults if dimensions are invalid
     const safeScreenWidth = isValidPositive(screenWidth) ? screenWidth : 0;
-    const safeTextWidth = textWidth > 0 ? textWidth : 0;
+    const safeTextWidth = isValidPositive(textWidth) ? textWidth : 0;
     
     if (direction === 'ltr') {
       // Text starts from right side of screen and scrolls left

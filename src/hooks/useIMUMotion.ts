@@ -280,8 +280,8 @@ export const useIMUMotion = ({
         return;
       }
       
-      // Reset to safe start position
-      const safeStartPosition = Number(screenWidth) || 0;
+      // Reset to safe start position (already validated to be positive finite)
+      const safeStartPosition = screenWidth;
       const safeEndPosition = -textWidth;
       translateX.value = safeStartPosition;
       
