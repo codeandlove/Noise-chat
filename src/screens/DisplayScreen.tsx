@@ -3,9 +3,10 @@
  * Implements US-003: Start display mode functionality
  * Implements US-004: IMU synchronization for motion-synced scrolling
  * Implements US-005: Tempo calibration with haptic feedback
+ * Implements US-006: Safety features (brightness restoration, auto-off)
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
@@ -46,6 +47,9 @@ export const DisplayScreen: React.FC<DisplayScreenProps> = ({
   const [phase, setPhase] = useState<DisplayPhase>('countdown');
   const [screenWidth, setScreenWidth] = useState(Dimensions.get('window').width);
   const [showFallbackNotice, setShowFallbackNotice] = useState(false);
+  
+  // Track if stop has been called to prevent double cleanup
+  const hasStoppedRef = useRef(false);
 
   // Track screen dimensions for responsive layout
   useEffect(() => {
@@ -97,8 +101,22 @@ export const DisplayScreen: React.FC<DisplayScreenProps> = ({
     };
   }, []);
 
+  // Safety cleanup: ensure brightness is restored on unmount (US-006)
+  useEffect(() => {
+    return () => {
+      // Cleanup brightness on unmount if it was modified and not already stopped
+      if (brightnessAccepted && !hasStoppedRef.current) {
+        BrightnessService.restoreBrightness();
+      }
+    };
+  }, [brightnessAccepted]);
+
   // Cleanup when stopping
   const handleStop = useCallback(async () => {
+    // Prevent double cleanup
+    if (hasStoppedRef.current) return;
+    hasStoppedRef.current = true;
+    
     // Restore brightness if it was changed
     if (brightnessAccepted) {
       await BrightnessService.restoreBrightness();
@@ -110,7 +128,7 @@ export const DisplayScreen: React.FC<DisplayScreenProps> = ({
     setPhase('displaying');
   }, []);
 
-  // Auto-off timeout
+  // Auto-off timeout (US-006: Safety feature)
   useEffect(() => {
     if (phase !== 'displaying') return;
 
