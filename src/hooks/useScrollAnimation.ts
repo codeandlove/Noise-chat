@@ -13,6 +13,18 @@ import {
 import type { SharedValue } from 'react-native-reanimated';
 import { DISPLAY_CONFIG } from '../constants';
 
+/**
+ * Minimum duration for scroll animation to prevent invalid animation drivers
+ */
+const MIN_ANIMATION_DURATION_MS = 200;
+
+/**
+ * Helper to check if a value is a finite number (defensive guard)
+ */
+const isFiniteNumber = (value: unknown): value is number => {
+  return typeof value === 'number' && Number.isFinite(value);
+};
+
 interface UseScrollAnimationParams {
   /** Text to animate */
   text: string;
@@ -84,12 +96,47 @@ export const useScrollAnimation = ({
   // Start/stop animation based on isActive and text changes
   useEffect(() => {
     if (isActive && text.length > 0) {
-      // Reset position to start position
-      translateX.value = startPosition;
+      // Defensive guard: validate animation values before starting
+      const safeAnimationDuration = Number(animationDuration);
+      const safeStartPosition = Number(startPosition);
+      const safeEndPosition = Number(endPosition);
+      
+      // Check if all values are valid finite numbers
+      if (!isFiniteNumber(safeAnimationDuration) || 
+          !isFiniteNumber(safeStartPosition) || 
+          !isFiniteNumber(safeEndPosition)) {
+        console.warn('[useScrollAnimation] Skipping animation - invalid values detected:', {
+          animationDuration,
+          startPosition,
+          endPosition,
+          safeAnimationDuration,
+          safeStartPosition,
+          safeEndPosition,
+        });
+        // Reset to safe start position and skip animation
+        translateX.value = isFiniteNumber(safeStartPosition) ? safeStartPosition : 0;
+        return;
+      }
+      
+      // Check if duration is valid (must be > 0, enforce minimum)
+      if (safeAnimationDuration <= 0) {
+        console.warn('[useScrollAnimation] Skipping animation - invalid duration (<= 0):', {
+          animationDuration: safeAnimationDuration,
+        });
+        translateX.value = safeStartPosition;
+        return;
+      }
+      
+      // Enforce minimum duration to prevent invalid native animation drivers
+      const safeDuration = Math.max(MIN_ANIMATION_DURATION_MS, safeAnimationDuration);
+      
+      // Reset position to safe start position before starting animation
+      translateX.value = safeStartPosition;
+      
       // Start infinite scroll animation
       translateX.value = withRepeat(
-        withTiming(endPosition, {
-          duration: animationDuration,
+        withTiming(safeEndPosition, {
+          duration: safeDuration,
           easing: Easing.linear,
         }),
         -1, // infinite
@@ -98,7 +145,9 @@ export const useScrollAnimation = ({
     } else {
       // Cancel animation when not active
       cancelAnimation(translateX);
-      translateX.value = startPosition;
+      // Reset to safe start position
+      const safeStartPosition = isFiniteNumber(startPosition) ? startPosition : 0;
+      translateX.value = safeStartPosition;
     }
 
     // Cleanup on unmount

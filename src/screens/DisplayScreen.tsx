@@ -53,10 +53,36 @@ export const DisplayScreen: React.FC<DisplayScreenProps> = ({
 
   // Track screen dimensions for responsive layout
   useEffect(() => {
-    const subscription = Dimensions.addEventListener('change', ({ window }) => {
-      setScreenWidth(window.width);
-    });
-    return () => subscription?.remove();
+    const handleDimensionChange = ({ window }: { window: { width: number; height: number } }) => {
+      // Defensive guard: validate window width before setting state
+      const newWidth = Number(window?.width);
+      if (typeof newWidth === 'number' && Number.isFinite(newWidth) && newWidth > 0) {
+        setScreenWidth(newWidth);
+      } else {
+        console.warn('[DisplayScreen] Invalid window width received from Dimensions change:', {
+          receivedWidth: window?.width,
+          newWidth,
+        });
+      }
+    };
+    
+    // Handle both newer and older React Native APIs for Dimensions listener
+    // Newer RN returns a subscription object with .remove() method
+    // Older RN uses addEventListener/removeEventListener pattern
+    let subscription: { remove: () => void } | null = null;
+    
+    try {
+      subscription = Dimensions.addEventListener('change', handleDimensionChange);
+    } catch (error) {
+      console.warn('[DisplayScreen] Failed to add Dimensions listener:', error);
+    }
+    
+    return () => {
+      // Defensive cleanup: handle both subscription patterns
+      if (subscription && typeof subscription.remove === 'function') {
+        subscription.remove();
+      }
+    };
   }, []);
 
   // Handle fallback activation
