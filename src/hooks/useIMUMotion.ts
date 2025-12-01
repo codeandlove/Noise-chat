@@ -17,6 +17,17 @@ import MotionService, { IMUState } from '../services/MotionService';
 import CalibrationService, { CalibrationState } from '../services/CalibrationService';
 import { DisplayMode, TempoIndicator, MotionData } from '../types';
 import { DISPLAY_CONFIG } from '../constants';
+import { isFiniteNumber } from '../utils';
+
+/**
+ * Minimum duration for auto-scroll animation to prevent invalid native animation drivers
+ */
+const MIN_AUTO_SCROLL_DURATION_MS = 200;
+
+/**
+ * Maximum scroll amount to clamp IMU velocity to avoid extreme values
+ */
+const MAX_SCROLL_AMOUNT = 1000;
 
 interface UseIMUMotionParams {
   /** Text to display */
@@ -85,6 +96,7 @@ export const useIMUMotion = ({
   const translateX = useSharedValue(screenWidth);
   const textWidth = text.length * DISPLAY_CONFIG.CHAR_WIDTH;
   const autoScrollActive = useRef(false);
+  const autoScrollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastTempoRef = useRef<TempoIndicator>('too-slow');
   const lastHapticTimeRef = useRef<number>(0);
   
@@ -173,7 +185,9 @@ export const useIMUMotion = ({
     
     // Calculate scroll amount based on velocity and direction
     if (motionDirection !== 'stationary') {
-      const scrollAmount = velocity * BASE_SCROLL_MULTIPLIER;
+      // Clamp scroll amount to safe range to avoid extreme values
+      const rawScrollAmount = velocity * BASE_SCROLL_MULTIPLIER;
+      const scrollAmount = Math.max(-MAX_SCROLL_AMOUNT, Math.min(MAX_SCROLL_AMOUNT, rawScrollAmount));
       const directionMultiplier = motionDirection === 'right' ? -1 : 1;
       
       // Update position with spring animation for smooth response
@@ -183,6 +197,20 @@ export const useIMUMotion = ({
       const minX = -textWidth;
       const maxX = screenWidth;
       const clampedX = Math.max(minX, Math.min(maxX, newX));
+      
+      // Defensive guard: verify all values are finite before calling withSpring
+      if (!isFiniteNumber(clampedX) || !isFiniteNumber(minX) || !isFiniteNumber(maxX) || !isFiniteNumber(newX)) {
+        console.warn('[useIMUMotion] Skipping IMU animation - invalid values detected:', {
+          clampedX,
+          minX,
+          maxX,
+          newX,
+          scrollAmount,
+          textWidth,
+          screenWidth,
+        });
+        return;
+      }
       
       translateX.value = withSpring(clampedX, {
         damping: 20,
@@ -194,9 +222,16 @@ export const useIMUMotion = ({
   
   // Start/stop monitoring based on mode and activity
   useEffect(() => {
+    // Clear any existing interval when effect runs
+    if (autoScrollIntervalRef.current) {
+      clearInterval(autoScrollIntervalRef.current);
+      autoScrollIntervalRef.current = null;
+    }
+    
     if (!isActive) {
       MotionService.stopMonitoring();
       cancelAnimation(translateX);
+      autoScrollActive.current = false;
       return;
     }
     
@@ -205,38 +240,94 @@ export const useIMUMotion = ({
       MotionService.addStateListener(handleStateUpdate);
       MotionService.startMonitoring(handleMotionData);
     } else if (displayMode === 'auto-scroll' && !autoScrollActive.current) {
+      // Defensive guard: validate dimensions before starting auto-scroll
+      const safeScreenWidth = Number(screenWidth);
+      const safeTextWidth = Number(textWidth);
+      
+      if (!isFiniteNumber(safeScreenWidth) || !isFiniteNumber(safeTextWidth) || safeScreenWidth <= 0 || safeTextWidth <= 0) {
+        console.warn('[useIMUMotion] Skipping auto-scroll animation - invalid dimensions:', {
+          screenWidth,
+          textWidth,
+          safeScreenWidth,
+          safeTextWidth,
+        });
+        return;
+      }
+      
       // Start auto-scroll fallback animation
       autoScrollActive.current = true;
       
       // Calculate animation duration for smooth scroll
-      const distance = screenWidth + textWidth;
-      const duration = (distance / 200) * 1000; // 200 px/s
+      const distance = safeScreenWidth + safeTextWidth;
+      const rawDuration = (distance / 200) * 1000; // 200 px/s
+      // Enforce minimum duration to prevent invalid animation drivers
+      const duration = Math.max(MIN_AUTO_SCROLL_DURATION_MS, rawDuration);
+      
+      // Defensive guard: verify duration is valid
+      if (!isFiniteNumber(duration)) {
+        console.warn('[useIMUMotion] Skipping auto-scroll animation - invalid duration:', { duration, distance });
+        autoScrollActive.current = false;
+        return;
+      }
+      
+      // Reset translateX to safe numeric value before starting animation
+      const safeStartPosition = isFiniteNumber(safeScreenWidth) ? safeScreenWidth : 0;
+      const safeEndPosition = isFiniteNumber(safeTextWidth) ? -safeTextWidth : 0;
       
       // Start initial animation from right side
-      translateX.value = screenWidth;
-      translateX.value = withTiming(-textWidth, {
+      translateX.value = safeStartPosition;
+      translateX.value = withTiming(safeEndPosition, {
         duration,
         easing: Easing.linear,
       });
       
       // Repeat animation at interval
-      const interval = setInterval(() => {
-        // Reset and start new animation in one call using sequence
-        translateX.value = screenWidth;
-        translateX.value = withTiming(-textWidth, {
+      autoScrollIntervalRef.current = setInterval(() => {
+        // Re-validate dimensions inside interval callback
+        const currentScreenWidth = Number(screenWidth);
+        const currentTextWidth = Number(textWidth);
+        
+        if (!isFiniteNumber(currentScreenWidth) || !isFiniteNumber(currentTextWidth) || 
+            currentScreenWidth <= 0 || currentTextWidth <= 0) {
+          console.warn('[useIMUMotion] Stopping auto-scroll interval - dimensions became invalid:', {
+            screenWidth,
+            textWidth,
+          });
+          if (autoScrollIntervalRef.current) {
+            clearInterval(autoScrollIntervalRef.current);
+            autoScrollIntervalRef.current = null;
+          }
+          autoScrollActive.current = false;
+          return;
+        }
+        
+        // Recalculate positions using current validated dimensions
+        const currentStartPosition = currentScreenWidth;
+        const currentEndPosition = -currentTextWidth;
+        
+        // Reset and start new animation with recalculated positions
+        translateX.value = currentStartPosition;
+        translateX.value = withTiming(currentEndPosition, {
           duration,
           easing: Easing.linear,
         });
       }, duration);
       
       return () => {
-        clearInterval(interval);
+        if (autoScrollIntervalRef.current) {
+          clearInterval(autoScrollIntervalRef.current);
+          autoScrollIntervalRef.current = null;
+        }
         autoScrollActive.current = false;
       };
     }
     
     return () => {
       MotionService.removeStateListener(handleStateUpdate);
+      if (autoScrollIntervalRef.current) {
+        clearInterval(autoScrollIntervalRef.current);
+        autoScrollIntervalRef.current = null;
+      }
     };
   }, [isActive, displayMode, translateX, screenWidth, textWidth, handleStateUpdate, handleMotionData]);
   
@@ -244,7 +335,8 @@ export const useIMUMotion = ({
   const recalibrate = useCallback(() => {
     MotionService.recalibrate();
     CalibrationService.recalibrate();
-    translateX.value = screenWidth;
+    // Use safe numeric value for translateX reset
+    translateX.value = isFiniteNumber(screenWidth) ? screenWidth : 0;
   }, [translateX, screenWidth]);
   
   // Toggle metronome
