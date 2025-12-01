@@ -13,6 +13,18 @@ import {
 import type { SharedValue } from 'react-native-reanimated';
 import { DISPLAY_CONFIG } from '../constants';
 
+/**
+ * Minimum animation duration to prevent crashes from invalid timing values
+ */
+const MIN_ANIMATION_DURATION = 200;
+
+/**
+ * Validates that a number is finite and greater than zero
+ */
+const isValidPositive = (value: number): boolean => {
+  return Number.isFinite(value) && value > 0;
+};
+
 interface UseScrollAnimationParams {
   /** Text to animate */
   text: string;
@@ -61,31 +73,70 @@ export const useScrollAnimation = ({
     return screenWidth + textWidth;
   }, [screenWidth, textWidth]);
 
-  // Calculate animation duration based on speed
+  // Calculate animation duration based on speed with minimum value
   const animationDuration = useMemo(() => {
     const baseDuration = (distance / DISPLAY_CONFIG.BASE_SCROLL_SPEED) * 1000; // ms
-    return baseDuration / speed;
+    const rawDuration = baseDuration / speed;
+    // Ensure minimum duration and valid number
+    return Math.max(MIN_ANIMATION_DURATION, Math.round(rawDuration));
   }, [distance, speed]);
 
   // Calculate start and end positions based on direction
   const { startPosition, endPosition } = useMemo(() => {
+    // Use safe defaults if dimensions are invalid
+    const safeScreenWidth = isValidPositive(screenWidth) ? screenWidth : 0;
+    const safeTextWidth = isValidPositive(textWidth) ? textWidth : 0;
+    
     if (direction === 'ltr') {
       // Text starts from right side of screen and scrolls left
-      return { startPosition: screenWidth, endPosition: -textWidth };
+      return { startPosition: safeScreenWidth, endPosition: -safeTextWidth };
     } else {
       // Text starts from left side of screen and scrolls right
-      return { startPosition: -textWidth, endPosition: screenWidth };
+      return { startPosition: -safeTextWidth, endPosition: safeScreenWidth };
     }
   }, [direction, screenWidth, textWidth]);
 
-  // Shared value for translateX animation
-  const translateX = useSharedValue(startPosition);
+  // Shared value for translateX animation - use safe start position
+  const translateX = useSharedValue(Number.isFinite(startPosition) ? startPosition : 0);
 
   // Start/stop animation based on isActive and text changes
   useEffect(() => {
     if (isActive && text.length > 0) {
-      // Reset position to start position
+      // Validate all animation parameters before starting
+      if (!Number.isFinite(distance) || !isValidPositive(distance)) {
+        console.warn('[useScrollAnimation] Cannot start animation - invalid distance:', {
+          distance,
+          screenWidth,
+          textWidth,
+        });
+        cancelAnimation(translateX);
+        return;
+      }
+      
+      if (!Number.isFinite(animationDuration) || animationDuration <= 0) {
+        console.warn('[useScrollAnimation] Cannot start animation - invalid duration:', {
+          animationDuration,
+          distance,
+          speed,
+        });
+        cancelAnimation(translateX);
+        return;
+      }
+      
+      if (!Number.isFinite(startPosition) || !Number.isFinite(endPosition)) {
+        console.warn('[useScrollAnimation] Cannot start animation - invalid positions:', {
+          startPosition,
+          endPosition,
+          screenWidth,
+          textWidth,
+        });
+        cancelAnimation(translateX);
+        return;
+      }
+      
+      // Reset position to safe start position before animation
       translateX.value = startPosition;
+      
       // Start infinite scroll animation
       translateX.value = withRepeat(
         withTiming(endPosition, {
@@ -98,14 +149,14 @@ export const useScrollAnimation = ({
     } else {
       // Cancel animation when not active
       cancelAnimation(translateX);
-      translateX.value = startPosition;
+      translateX.value = Number.isFinite(startPosition) ? startPosition : 0;
     }
 
     // Cleanup on unmount
     return () => {
       cancelAnimation(translateX);
     };
-  }, [isActive, text, speed, startPosition, endPosition, animationDuration, translateX]);
+  }, [isActive, text, speed, startPosition, endPosition, animationDuration, translateX, distance, screenWidth, textWidth]);
 
   return {
     translateX,

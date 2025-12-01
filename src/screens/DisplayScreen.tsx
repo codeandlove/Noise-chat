@@ -51,12 +51,24 @@ export const DisplayScreen: React.FC<DisplayScreenProps> = ({
   // Track if stop has been called to prevent double cleanup
   const hasStoppedRef = useRef(false);
 
-  // Track screen dimensions for responsive layout
+  // Track screen dimensions for responsive layout - handles orientation changes
   useEffect(() => {
-    const subscription = Dimensions.addEventListener('change', ({ window }) => {
-      setScreenWidth(window.width);
-    });
-    return () => subscription?.remove();
+    const handleDimensionChange = ({ window }: { window: { width: number; height: number } }) => {
+      // Validate dimensions before updating state to prevent NaN/Infinity crashes
+      if (Number.isFinite(window.width) && window.width > 0) {
+        setScreenWidth(window.width);
+      }
+    };
+
+    const subscription = Dimensions.addEventListener('change', handleDimensionChange);
+    
+    // Handle cleanup for different React Native versions
+    return () => {
+      // Modern RN versions return an object with remove() method
+      if (subscription && typeof subscription.remove === 'function') {
+        subscription.remove();
+      }
+    };
   }, []);
 
   // Handle fallback activation
