@@ -18,6 +18,30 @@ import CalibrationService, { CalibrationState } from '../services/CalibrationSer
 import { DisplayMode, TempoIndicator, MotionData } from '../types';
 import { DISPLAY_CONFIG } from '../constants';
 
+/**
+ * Minimum animation duration to prevent crashes from invalid timing values
+ */
+const MIN_ANIMATION_DURATION = 200;
+
+/**
+ * Maximum scroll amount per step to prevent huge jumps
+ */
+const MAX_SCROLL_AMOUNT = 1000;
+
+/**
+ * Validates that a number is finite and greater than zero
+ */
+const isValidPositive = (value: number): boolean => {
+  return Number.isFinite(value) && value > 0;
+};
+
+/**
+ * Clamps a value between min and max
+ */
+const clamp = (value: number, min: number, max: number): number => {
+  return Math.max(min, Math.min(max, value));
+};
+
 interface UseIMUMotionParams {
   /** Text to display */
   text: string;
@@ -82,9 +106,11 @@ export const useIMUMotion = ({
   const [metronomeEnabled, setMetronomeEnabledState] = useState(true);
   
   // Animation values
-  const translateX = useSharedValue(screenWidth);
+  const safeScreenWidth = isValidPositive(screenWidth) ? screenWidth : 0;
+  const translateX = useSharedValue(safeScreenWidth);
   const textWidth = text.length * DISPLAY_CONFIG.CHAR_WIDTH;
   const autoScrollActive = useRef(false);
+  const autoScrollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastTempoRef = useRef<TempoIndicator>('too-slow');
   const lastHapticTimeRef = useRef<number>(0);
   
@@ -173,7 +199,9 @@ export const useIMUMotion = ({
     
     // Calculate scroll amount based on velocity and direction
     if (motionDirection !== 'stationary') {
-      const scrollAmount = velocity * BASE_SCROLL_MULTIPLIER;
+      // Clamp scroll amount to prevent huge jumps
+      const rawScrollAmount = velocity * BASE_SCROLL_MULTIPLIER;
+      const scrollAmount = clamp(rawScrollAmount, -MAX_SCROLL_AMOUNT, MAX_SCROLL_AMOUNT);
       const directionMultiplier = motionDirection === 'right' ? -1 : 1;
       
       // Update position with spring animation for smooth response
@@ -183,6 +211,18 @@ export const useIMUMotion = ({
       const minX = -textWidth;
       const maxX = screenWidth;
       const clampedX = Math.max(minX, Math.min(maxX, newX));
+      
+      // Validate all values before animation to prevent NaN/Infinity crashes
+      if (!Number.isFinite(clampedX) || !Number.isFinite(minX) || !Number.isFinite(maxX)) {
+        console.warn('[useIMUMotion] Invalid animation values in handleMotionData:', {
+          clampedX,
+          minX,
+          maxX,
+          screenWidth,
+          textWidth,
+        });
+        return;
+      }
       
       translateX.value = withSpring(clampedX, {
         damping: 20,
@@ -194,9 +234,19 @@ export const useIMUMotion = ({
   
   // Start/stop monitoring based on mode and activity
   useEffect(() => {
+    // Cleanup any existing auto-scroll interval
+    const clearAutoScrollInterval = () => {
+      if (autoScrollIntervalRef.current) {
+        clearInterval(autoScrollIntervalRef.current);
+        autoScrollIntervalRef.current = null;
+      }
+      autoScrollActive.current = false;
+    };
+
     if (!isActive) {
       MotionService.stopMonitoring();
       cancelAnimation(translateX);
+      clearAutoScrollInterval();
       return;
     }
     
@@ -205,38 +255,67 @@ export const useIMUMotion = ({
       MotionService.addStateListener(handleStateUpdate);
       MotionService.startMonitoring(handleMotionData);
     } else if (displayMode === 'auto-scroll' && !autoScrollActive.current) {
+      // Validate dimensions before starting auto-scroll
+      if (!isValidPositive(screenWidth) || !isValidPositive(textWidth)) {
+        console.warn('[useIMUMotion] Cannot start auto-scroll - invalid dimensions:', {
+          screenWidth,
+          textWidth,
+        });
+        autoScrollActive.current = false;
+        return;
+      }
+
       // Start auto-scroll fallback animation
       autoScrollActive.current = true;
       
-      // Calculate animation duration for smooth scroll
+      // Calculate animation duration for smooth scroll with minimum duration
       const distance = screenWidth + textWidth;
-      const duration = (distance / 200) * 1000; // 200 px/s
+      const rawDuration = (distance / 200) * 1000; // 200 px/s
+      const duration = Math.max(MIN_ANIMATION_DURATION, Math.round(rawDuration));
+      
+      // Validate duration
+      if (!Number.isFinite(duration)) {
+        console.warn('[useIMUMotion] Invalid animation duration:', { distance, rawDuration, duration });
+        autoScrollActive.current = false;
+        return;
+      }
+      
+      // Reset to safe start position
+      const safeStartPosition = Number(screenWidth) || 0;
+      const safeEndPosition = -textWidth;
+      translateX.value = safeStartPosition;
       
       // Start initial animation from right side
-      translateX.value = screenWidth;
-      translateX.value = withTiming(-textWidth, {
+      translateX.value = withTiming(safeEndPosition, {
         duration,
         easing: Easing.linear,
       });
       
-      // Repeat animation at interval
-      const interval = setInterval(() => {
-        // Reset and start new animation in one call using sequence
-        translateX.value = screenWidth;
-        translateX.value = withTiming(-textWidth, {
+      // Repeat animation at interval using ref
+      autoScrollIntervalRef.current = setInterval(() => {
+        // Re-validate dimensions inside interval - they may have changed during rotation
+        if (!isValidPositive(screenWidth) || !isValidPositive(textWidth)) {
+          console.warn('[useIMUMotion] Auto-scroll interval: invalid dimensions, clearing interval');
+          clearAutoScrollInterval();
+          return;
+        }
+        
+        // Reset and start new animation
+        translateX.value = safeStartPosition;
+        translateX.value = withTiming(safeEndPosition, {
           duration,
           easing: Easing.linear,
         });
       }, duration);
       
       return () => {
-        clearInterval(interval);
-        autoScrollActive.current = false;
+        clearAutoScrollInterval();
       };
     }
     
     return () => {
       MotionService.removeStateListener(handleStateUpdate);
+      clearAutoScrollInterval();
     };
   }, [isActive, displayMode, translateX, screenWidth, textWidth, handleStateUpdate, handleMotionData]);
   
@@ -244,7 +323,8 @@ export const useIMUMotion = ({
   const recalibrate = useCallback(() => {
     MotionService.recalibrate();
     CalibrationService.recalibrate();
-    translateX.value = screenWidth;
+    // Use safe value for reset
+    translateX.value = isValidPositive(screenWidth) ? screenWidth : 0;
   }, [translateX, screenWidth]);
   
   // Toggle metronome
