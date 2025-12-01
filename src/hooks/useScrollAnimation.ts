@@ -12,18 +12,12 @@ import {
 } from 'react-native-reanimated';
 import type { SharedValue } from 'react-native-reanimated';
 import { DISPLAY_CONFIG } from '../constants';
+import { isFiniteNumber } from '../utils';
 
 /**
  * Minimum duration for scroll animation to prevent invalid animation drivers
  */
 const MIN_ANIMATION_DURATION_MS = 200;
-
-/**
- * Helper to check if a value is a finite number (defensive guard)
- */
-const isFiniteNumber = (value: unknown): value is number => {
-  return typeof value === 'number' && Number.isFinite(value);
-};
 
 interface UseScrollAnimationParams {
   /** Text to animate */

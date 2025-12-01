@@ -66,9 +66,8 @@ export const DisplayScreen: React.FC<DisplayScreenProps> = ({
       }
     };
     
-    // Handle both newer and older React Native APIs for Dimensions listener
-    // Newer RN returns a subscription object with .remove() method
-    // Older RN uses addEventListener/removeEventListener pattern
+    // Handle Dimensions listener with defensive subscription management
+    // React Native returns a subscription object with .remove() method
     let subscription: { remove: () => void } | null = null;
     
     try {

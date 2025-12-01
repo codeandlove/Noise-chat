@@ -17,6 +17,7 @@ import MotionService, { IMUState } from '../services/MotionService';
 import CalibrationService, { CalibrationState } from '../services/CalibrationService';
 import { DisplayMode, TempoIndicator, MotionData } from '../types';
 import { DISPLAY_CONFIG } from '../constants';
+import { isFiniteNumber } from '../utils';
 
 /**
  * Minimum duration for auto-scroll animation to prevent invalid native animation drivers
@@ -27,13 +28,6 @@ const MIN_AUTO_SCROLL_DURATION_MS = 200;
  * Maximum scroll amount to clamp IMU velocity to avoid extreme values
  */
 const MAX_SCROLL_AMOUNT = 1000;
-
-/**
- * Helper to check if a value is a finite number (defensive guard)
- */
-const isFiniteNumber = (value: unknown): value is number => {
-  return typeof value === 'number' && Number.isFinite(value);
-};
 
 interface UseIMUMotionParams {
   /** Text to display */
@@ -307,9 +301,13 @@ export const useIMUMotion = ({
           return;
         }
         
-        // Reset and start new animation
-        translateX.value = safeStartPosition;
-        translateX.value = withTiming(safeEndPosition, {
+        // Recalculate positions using current validated dimensions
+        const currentStartPosition = currentScreenWidth;
+        const currentEndPosition = -currentTextWidth;
+        
+        // Reset and start new animation with recalculated positions
+        translateX.value = currentStartPosition;
+        translateX.value = withTiming(currentEndPosition, {
           duration,
           easing: Easing.linear,
         });

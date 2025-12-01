@@ -21,3 +21,5 @@ export {
   getAutoOffTimeout,
   formatRemainingTime,
 } from './safety';
+
+export { isFiniteNumber } from './numberValidation';
